@@ -65,6 +65,7 @@ function auth(req, res, next) {
     return next();
 }
 
+/*
 // Function to copy the CSV file to the SMB drive
 function copyCsvToSmbDrive() {
     const localCsvPath = 'records.csv';
@@ -128,9 +129,12 @@ schedule.scheduleJob('0 0 * * *', () => {
 });
 
 // Schedule a job to copy the CSV file to the SMB drive every 10 minutes
-schedule.scheduleJob('*/10 * * * *', () => {
+schedule.scheduleJob('0 * * * *', () => {
     copyCsvToSmbDrive();
 });
+
+*/
+
 
 // Route for serving the main page
 app.get('/', (req, res) => {
