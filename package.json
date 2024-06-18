@@ -4,7 +4,9 @@
   "description": "Rover check-in/out system with dashboard",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "mocha 'test/**/*.js'",
+    "test:e2e": "cypress open"
   },
   "dependencies": {
     "basic-auth": "^2.0.1",
@@ -18,5 +20,12 @@
     "smb2": "^0.2.11",
     "sqlite3": "^5.0.2",
     "xlsx": "^0.17.0"
+  },
+  "devDependencies": {
+    "chai": "^5.1.1",
+    "cypress": "^13.11.0",
+    "mocha": "^10.4.0",
+    "sinon": "^18.0.0",
+    "supertest": "^7.0.0"
   }
 }
