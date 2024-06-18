@@ -8,6 +8,8 @@ const nodemailer = require('nodemailer');
 const schedule = require('node-schedule');
 const XLSX = require('xlsx');
 const SMB2 = require('smb2');
+const session = require('express-session');
+const basicAuth = require('basic-auth');
 
 // Initialize the express application
 const app = express();
@@ -21,6 +23,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Set the view engine to EJS for rendering HTML templates
 app.set('view engine', 'ejs');
+
+// Middleware for session management
+app.use(session({
+    secret: 'secret-key', // Replace with a strong secret
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Set secure to true if using HTTPS
+}));
 
 // Configure the CSV writer to write data to 'records.csv'
 const csvWriter = createObjectCsvWriter({
@@ -50,6 +60,20 @@ const smb2Client = new SMB2({
     password: 'your-password',           // Replace with your SMB password
     domain: 'your-domain'                // Replace with your SMB domain
 });
+
+// Middleware for basic authentication
+function auth(req, res, next) {
+    function unauthorized(res) {
+        res.set('WWW-Authenticate', 'Basic realm="401"');
+        return res.status(401).send('Authentication required.');
+    }
+
+    const user = basicAuth(req);
+    if (!user || user.name !== 'rover' || user.pass !== 'rover') {
+        return unauthorized(res);
+    }
+    return next();
+}
 
 // Function to convert a CSV file to an Excel file
 function csvToExcel(csvFilePath, excelFilePath) {
@@ -148,8 +172,37 @@ app.post('/submit', (req, res) => {
             console.error('Error writing to CSV', err);
         });
 
+    // Update session data for the dashboard
+    if (action === 'Check In') {
+        delete req.session.rovers[roverNumber];
+    } else if (action === 'Check Out') {
+        req.session.rovers = req.session.rovers || {};
+        req.session.rovers[roverNumber] = employeeID;
+    }
+
     // Redirect the user back to the main page
     res.redirect('/');
+});
+
+// Route for the dashboard page
+app.get('/dashboard', auth, (req, res) => {
+    const rovers = req.session.rovers || {};
+    res.render('dashboard', { rovers });
+});
+
+// Route to download the records as an Excel file
+app.get('/download', auth, (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
+    const csvFilePath = 'records.csv';
+    const excelFilePath = `records_${today}.xlsx`;
+
+    csvToExcel(csvFilePath, excelFilePath);
+
+    res.download(excelFilePath, `records_${today}.xlsx`, (err) => {
+        if (err) {
+            console.error('Error downloading file:', err);
+        }
+    });
 });
 
 // Start the server and listen on the specified port
