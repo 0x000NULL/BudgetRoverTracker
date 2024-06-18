@@ -27,7 +27,14 @@
                 <% } %>
             </tbody>
         </table>
-        <a href="/download"><button>Download Records as Excel</button></a>
+        <h2>Download Records</h2>
+        <form action="/download" method="get">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" name="startDate" required>
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate" name="endDate" required>
+            <button type="submit">Download Records as Excel</button>
+        </form>
     </div>
 </body>
 </html>
