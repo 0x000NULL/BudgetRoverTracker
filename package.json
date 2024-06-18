@@ -16,6 +16,7 @@
     "nodemailer": "^6.6.3",
     "node-schedule": "^2.1.0",
     "smb2": "^0.3.4",
+    "sqlite3": "^5.0.2",
     "xlsx": "^0.17.0"
   }
 }
