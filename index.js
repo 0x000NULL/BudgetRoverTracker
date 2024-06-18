@@ -7,6 +7,7 @@ const { createObjectCsvWriter } = require('csv-writer');
 const nodemailer = require('nodemailer');
 const schedule = require('node-schedule');
 const XLSX = require('xlsx');
+const SMB2 = require('smb2');
 
 // Initialize the express application
 const app = express();
@@ -42,6 +43,14 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Configure the SMB connection
+const smb2Client = new SMB2({
+    share: '\\\\YOUR_SMB_SERVER\\share', // Replace with your SMB server and share
+    username: 'your-username',           // Replace with your SMB username
+    password: 'your-password',           // Replace with your SMB password
+    domain: 'your-domain'                // Replace with your SMB domain
+});
+
 // Function to convert a CSV file to an Excel file
 function csvToExcel(csvFilePath, excelFilePath) {
     // Read the CSV file data
@@ -58,7 +67,27 @@ function csvToExcel(csvFilePath, excelFilePath) {
     XLSX.writeFile(workbook, excelFilePath);
 }
 
-// Schedule a job to run at midnight every day
+// Function to copy the CSV file to the SMB drive
+function copyCsvToSmbDrive() {
+    const localCsvPath = 'records.csv';
+    const remoteCsvPath = `\\YOUR_SMB_SERVER\\share\\records_${new Date().toISOString().split('T')[0]}.csv`; // Adjust the remote path as needed
+
+    fs.readFile(localCsvPath, (err, data) => {
+        if (err) {
+            return console.error('Error reading local CSV file:', err);
+        }
+
+        smb2Client.writeFile(remoteCsvPath, data, (err) => {
+            if (err) {
+                console.error('Error writing to SMB drive:', err);
+            } else {
+                console.log('CSV file copied to SMB drive successfully');
+            }
+        });
+    });
+}
+
+// Schedule a job to run at midnight every day to send the daily records via email
 schedule.scheduleJob('0 0 * * *', () => {
     // Get the current date
     const today = new Date().toISOString().split('T')[0];
@@ -90,6 +119,11 @@ schedule.scheduleJob('0 0 * * *', () => {
             console.log('Email sent:', info.response);
         }
     });
+});
+
+// Schedule a job to copy the CSV file to the SMB drive every 10 minutes
+schedule.scheduleJob('*/10 * * * *', () => {
+    copyCsvToSmbDrive();
 });
 
 // Route for serving the main page
